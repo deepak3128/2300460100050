@@ -13,7 +13,9 @@ const PRIORITY_WEIGHT: Record<NotificationType, number> = {
 export async function fetchNotifications(params: NotificationQueryParams = {}): Promise<PaginatedNotificationsResponse> {
   await logger("info", "service", "Fetching notifications from test server");
   const url = new URL(NOTIFICATIONS_URL);
-  if (params.page) url.searchParams.set("page", String(params.page));
+  if (params.page !== undefined) url.searchParams.set("page", String(params.page));
+  if (params.limit !== undefined) url.searchParams.set("limit", String(params.limit));
+  if (params.notification_type) url.searchParams.set("notification_type", params.notification_type);
   if (params.limit) url.searchParams.set("limit", String(params.limit));
   if (params.notification_type) url.searchParams.set("notification_type", params.notification_type);
   try {
@@ -25,8 +27,8 @@ export async function fetchNotifications(params: NotificationQueryParams = {}): 
       await logger("error", "service", `Test server responded with ${response.status}: ${errText}`);
       throw new Error(`Upstream error ${response.status}: ${errText}`);
     }
-    const data = await response.json();
-    const notifications: Notification[] = data.notifications || [];
+    const data = await response.json() as PaginatedNotificationsResponse;
+    const notifications = data.notifications ?? [];
     await logger("info", "service", `Successfully fetched ${notifications.length} notifications`);
     return { notifications, total: notifications.length, page: params.page || 1, limit: params.limit || notifications.length };
   } catch (err) {
