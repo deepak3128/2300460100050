@@ -16,8 +16,6 @@ export async function fetchNotifications(params: NotificationQueryParams = {}): 
   if (params.page !== undefined) url.searchParams.set("page", String(params.page));
   if (params.limit !== undefined) url.searchParams.set("limit", String(params.limit));
   if (params.notification_type) url.searchParams.set("notification_type", params.notification_type);
-  if (params.limit) url.searchParams.set("limit", String(params.limit));
-  if (params.notification_type) url.searchParams.set("notification_type", params.notification_type);
   try {
     const response = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${config.authToken}`, "Content-Type": "application/json" },
@@ -30,9 +28,9 @@ export async function fetchNotifications(params: NotificationQueryParams = {}): 
     const data = await response.json() as PaginatedNotificationsResponse;
     const notifications = data.notifications ?? [];
     await logger("info", "service", `Successfully fetched ${notifications.length} notifications`);
-    return { notifications, total: notifications.length, page: params.page || 1, limit: params.limit || notifications.length };
+    return { notifications, total: data.total ?? notifications.length, page: params.page || 1, limit: params.limit || notifications.length };
   } catch (err) {
-    await logger("fatal", "service", `Failed to fetch notifications: ${(err as Error).message}`);
+    await logger("error", "service", `Failed to fetch notifications: ${(err as Error).message}`);
     throw err;
   }
 }
